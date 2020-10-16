@@ -58,7 +58,7 @@ func (dl *DancingLinkArray) Insert(row int, col int, digit int) {
 }
 
 func (dl *DancingLinkArray) Solve() {
-	dl.solveR(0)
+	dl.solveR()
 }
 
 func (dl *DancingLinkArray) Info() string {
@@ -98,21 +98,45 @@ func (dl *DancingLinkArray) initCondMatrix() {
 	}
 }
 
-func (dl *DancingLinkArray) solveR(startCol int) bool {
-	for col := startCol; col < len(dl.colFlags); col++ {
-		if !dl.colFlags[col] {
-			for row := 0; row < len(dl.rowFlags); row++ {
-				if !dl.rowFlags[row] && dl.condMatrix[row][col] {
-					dl.selectRow(row)
-					if dl.colCount == 0 || dl.solveR(col+1) {
-						return true
-					}
-					dl.unselectRow(row)
+func (dl *DancingLinkArray) solveR() bool {
+	cols := dl.sortCols()
+	for _, col := range cols {
+		for row := 0; row < len(dl.rowFlags); row++ {
+			if !dl.rowFlags[row] && dl.condMatrix[row][col] {
+				dl.selectRow(row)
+				if dl.colCount == 0 || dl.solveR() {
+					return true
 				}
+				dl.unselectRow(row)
 			}
 		}
 	}
 	return false
+}
+
+func (dl *DancingLinkArray) sortCols() []int {
+	colOrder, colSize := make([]int, 324), make([]int, 324)
+	nCols := 0
+	for col := range dl.colFlags {
+		if !dl.colFlags[col] {
+			i, count := 0, 0
+			for r := 0; r < len(dl.rowFlags); r++ {
+				if !dl.rowFlags[r] && dl.condMatrix[r][col] {
+					count++
+				}
+			}
+			for ; i < nCols && colSize[i] <= count; i++ {
+			}
+			for j := nCols; j >= i; j-- {
+				colOrder[j+1] = colOrder[j]
+				colSize[j+1] = colSize[j]
+			}
+			colOrder[i] = col
+			colSize[i] = count
+			nCols++
+		}
+	}
+	return colOrder[:nCols]
 }
 
 func (dl *DancingLinkArray) selectRow(row int) {
@@ -122,15 +146,6 @@ func (dl *DancingLinkArray) selectRow(row int) {
 	for col, colFlag := range dl.colFlags {
 		if dl.condMatrix[row][col] && !colFlag {
 			dl.removeCol(col, row)
-			// dl.deleteCols[row] = append(dl.deleteCols[row], col)
-			// dl.colFlags[col] = true
-			// dl.colCount--
-			// for r := 0; r < len(dl.rowFlags); r++ {
-			// 	if r != row && dl.rowFlags[r] && dl.condMatrix[r][col] {
-			// 		dl.deleteRows[row] = append(dl.deleteRows[row], r)
-			// 		dl.rowFlags[r] = true
-			// 	}
-			// }
 		}
 	}
 }

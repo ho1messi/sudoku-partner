@@ -3,7 +3,7 @@ package solver
 import "testing"
 
 func TestBruteForceInsert(t *testing.T) {
-	for _, puzzle := range puzzles {
+	for _, puzzle := range easyPuzzles {
 		sudoku := puzzle[0]
 		bf := NewBoardBruteForceFromString(sudoku)
 		result := bf.String()
@@ -14,7 +14,7 @@ func TestBruteForceInsert(t *testing.T) {
 }
 
 func TestBruteForceSolve(t *testing.T) {
-	for _, puzzle := range puzzles {
+	for _, puzzle := range easyPuzzles {
 		sudoku, result := puzzle[0], puzzle[1]
 		bf := NewBoardBruteForceFromString(sudoku)
 		info := bf.Info()

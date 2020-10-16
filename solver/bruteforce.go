@@ -3,6 +3,8 @@ package solver
 import (
 	"fmt"
 	"strings"
+
+	mapset "github.com/deckarep/golang-set"
 )
 
 type BoardBruteForce struct {
@@ -50,7 +52,7 @@ func (bf *BoardBruteForce) Remove(row int, col int) {
 }
 
 func (bf *BoardBruteForce) Solve() {
-	bf.solveR(0)
+	bf.solveR()
 }
 
 func (bf BoardBruteForce) String() string {
@@ -78,11 +80,9 @@ func (bf *BoardBruteForce) initCellUnits() {
 	}
 }
 
-func (bf *BoardBruteForce) solveR(startIndex int) bool {
-	for i, digit := range bf.board {
-		if i < startIndex || digit > 0 {
-			continue
-		}
+func (bf *BoardBruteForce) solveR() bool {
+	cellOrder := bf.sortCells()
+	for _, i := range cellOrder {
 		for d := 1; d < 10; d++ {
 			conflictFlag := false
 			for _, unit := range bf.cellUnits[i] {
@@ -98,7 +98,7 @@ func (bf *BoardBruteForce) solveR(startIndex int) bool {
 			}
 			if !conflictFlag {
 				bf.Insert(i/9, i%9, d)
-				if bf.stepToGo == 0 || bf.solveR(i+1) {
+				if bf.stepToGo == 0 || bf.solveR() {
 					return true
 				}
 				bf.Remove(i/9, i%9)
@@ -107,4 +107,32 @@ func (bf *BoardBruteForce) solveR(startIndex int) bool {
 		}
 	}
 	return false
+}
+
+func (bf *BoardBruteForce) sortCells() []int {
+	cellOrder, cellSize := make([]int, 81), make([]int, 81)
+	ncells := 0
+	for cell := range bf.board {
+		if bf.board[cell] == 0 {
+			digitSet := mapset.NewSet()
+			for _, unit := range bf.cellUnits[cell] {
+				for _, c := range bf.units[unit] {
+					if digit := bf.board[c]; digit > 0 {
+						digitSet.Add(digit)
+					}
+				}
+			}
+			i, count := 0, 9-digitSet.Cardinality()
+			for ; i < ncells && cellSize[i] <= count; i++ {
+			}
+			for j := ncells; j >= i; j-- {
+				cellOrder[j+1] = cellOrder[j]
+				cellSize[j+1] = cellSize[j]
+			}
+			cellOrder[i] = cell
+			cellSize[i] = count
+			ncells++
+		}
+	}
+	return cellOrder
 }
