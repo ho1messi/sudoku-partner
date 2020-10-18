@@ -3,15 +3,12 @@ package solver
 import (
 	"fmt"
 	"strings"
-
-	mapset "github.com/deckarep/golang-set"
 )
 
 type DancingLinkArray struct {
 	condMatrix [729][324]bool
 	rowFlags   [729]bool
 	colFlags   [324]bool
-	steps      mapset.Set
 	board      [81]int
 	deleteRows map[int][]int
 	deleteCols map[int][]int
@@ -23,7 +20,6 @@ func NewDancingLinkArray() DancingLinkArray {
 		[729][324]bool{},
 		[729]bool{},
 		[324]bool{},
-		mapset.NewSet(),
 		[81]int{},
 		make(map[int][]int),
 		make(map[int][]int),
@@ -140,7 +136,6 @@ func (dl *DancingLinkArray) sortCols() []int {
 }
 
 func (dl *DancingLinkArray) selectRow(row int) {
-	dl.steps.Add(row)
 	index, digit := rowToBoard(row)
 	dl.board[index] = digit
 	for col, colFlag := range dl.colFlags {
@@ -151,7 +146,6 @@ func (dl *DancingLinkArray) selectRow(row int) {
 }
 
 func (dl *DancingLinkArray) unselectRow(row int) {
-	dl.steps.Remove(row)
 	index, _ := rowToBoard(row)
 	dl.board[index] = 0
 	dl.rowFlags[row] = false
