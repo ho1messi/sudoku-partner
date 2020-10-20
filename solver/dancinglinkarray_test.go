@@ -10,7 +10,7 @@ func TestDancingLinkArraySolve(t *testing.T) {
 		dl.Solve()
 		solved := dl.String()
 		if solved != result {
-			t.Errorf("\nError case:\nsudoku: %s\nsolved: %s\nresult: %s\ninfo: %s", sudoku, solved, result, info)
+			t.Errorf("\nsudoku: %s\nsolved: %s\nresult: %s\ninfo: %s", sudoku, solved, result, info)
 		}
 	}
 }

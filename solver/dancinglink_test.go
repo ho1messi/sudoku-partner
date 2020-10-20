@@ -1,6 +1,7 @@
 package solver
 
 import (
+	"strings"
 	"testing"
 
 	mapset "github.com/deckarep/golang-set"
@@ -27,6 +28,13 @@ func TestDancingLinkInit(t *testing.T) {
 		if count != 4 {
 			t.Errorf("\nsize of row is not 4!\nrow: %d, size: %d", i, count)
 		}
+	}
+
+	if dl.colSet.Cardinality() != 324 {
+		t.Errorf("\ncardinality of col set is not 324!\ncardinality: %d", dl.colSet.Cardinality())
+	}
+	if dl.rowSet.Cardinality() != 729 {
+		t.Errorf("\ncardinality of row set is not 729!\ncardinality: %d", dl.colSet.Cardinality())
 	}
 }
 
@@ -64,13 +72,48 @@ func TestDancingLinkInsert(t *testing.T) {
 }
 
 func TestDancingLinkSolve(t *testing.T) {
-	for _, puzzle := range veryHardPuzzles {
+	puzzles := append(easyPuzzles, hardPuzzles...)
+	for _, puzzle := range puzzles {
 		sudoku, result := puzzle[0], puzzle[1]
 		dl := NewDancingLinkFromString(sudoku)
 		dl.Solve()
 		solved := dl.String()
 		if solved != result {
-			t.Errorf("\nError case:\nsudoku: %s\nsolved: %s\nresult: %s", sudoku, solved, result)
+			t.Errorf("\nsudoku: %s\nsolved: %s\nresult: %s", sudoku, solved, result)
+		}
+		nCols, nRows := dl.colSet.Cardinality(), dl.rowSet.Cardinality()
+		if nCols > 0 || nRows > 0 {
+			t.Errorf("\nnum cols: %d\nnum rows: %d", nCols, nRows)
+		}
+	}
+
+	for _, puzzle := range wrongPuzzles {
+		sudoku := puzzle[0]
+		dl := NewDancingLinkFromString(sudoku)
+		nCols1, nRows1 := dl.colSet.Cardinality(), dl.rowSet.Cardinality()
+		result := dl.Solve()
+		solved := dl.String()
+		if result {
+			t.Errorf("\nsolved a wrong puzzle!\nsolved: %s\nsudoku: %s\n", solved, sudoku)
+		}
+		nCols2, nRows2 := dl.colSet.Cardinality(), dl.rowSet.Cardinality()
+		if nCols2 != nCols1 || nRows2 != nRows1 {
+			t.Errorf("\nnum cols: %d former: %d\nnum rows: %d former: %d", nCols2, nCols1, nRows2, nRows1)
+		}
+	}
+}
+
+func TestDancingLinkGetAllResult(t *testing.T) {
+	puzzles := append(easyPuzzles, hardPuzzles...)
+	for _, puzzle := range puzzles {
+		sudoku, result := puzzle[0], puzzle[1]
+		dl := NewDancingLinkFromString(sudoku)
+		results := dl.GetAllResult()
+		solved := strings.Join(results, "\n        ")
+		if len(results) != 1 {
+			t.Errorf("\nsudoku: %s\nresult: %s\nsolved: %s", sudoku, result, solved)
+		} else if results[0] != result {
+			t.Errorf("\nsudoku: %s\nresult: %s\nsolved: %s", sudoku, result, solved)
 		}
 	}
 }

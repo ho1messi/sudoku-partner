@@ -8,7 +8,7 @@ func TestBruteForceInsert(t *testing.T) {
 		bf := NewBoardBruteForceFromString(sudoku)
 		result := bf.String()
 		if result != sudoku {
-			t.Errorf("\nError case:\nsudoku: %s\nresult: %s\n", sudoku, result)
+			t.Errorf("\nsudoku: %s\nresult: %s\n", sudoku, result)
 		}
 	}
 }
@@ -21,7 +21,7 @@ func TestBruteForceSolve(t *testing.T) {
 		bf.Solve()
 		solved := bf.String()
 		if solved != result {
-			t.Errorf("\nError case:\nsudoku: %s\nsolved: %s\nresult: %s\ninfo: %s", sudoku, solved, result, info)
+			t.Errorf("\nsudoku: %s\nsolved: %s\nresult: %s\ninfo: %s", sudoku, solved, result, info)
 		}
 	}
 }

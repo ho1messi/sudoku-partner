@@ -1,12 +1,18 @@
 package solver
 
-import "strings"
+import (
+	"strings"
+
+	mapset "github.com/deckarep/golang-set"
+)
 
 type DancingLink struct {
 	board    [81]int
 	head     *DancingLinkNode
 	colNodes [](*DancingLinkNode)
 	rowNodes [](*DancingLinkNode)
+	colSet   mapset.Set
+	rowSet   mapset.Set
 }
 
 type DancingLinkNode struct {
@@ -44,31 +50,27 @@ func (dl *DancingLink) Insert(index int, digit int) {
 	}
 }
 
-func (dl *DancingLink) Solve() {
-	if dl.head.right != dl.head {
-		colNode := dl.head.right
-		dl.coverCol(colNode.col)
-		for node1 := colNode.down; node1 != colNode; node1 = node1.down {
-			dl.addStep(node1.row)
-			rowNode := dl.rowNodes[node1.row]
-			for node2 := rowNode.right; node2 != rowNode; node2 = node2.right {
-				if node2 != node1 {
-					dl.coverCol(node2.col)
-				}
-			}
-			dl.Solve()
-			if dl.head.right == dl.head {
-				return
-			}
-			for node2 := rowNode.left; node2 != rowNode; node2 = node2.left {
-				if node2 != node1 {
-					dl.uncoverCol(node2.col)
-				}
-			}
-			dl.removeStep(node1.row)
-		}
-		dl.uncoverCol(colNode.col)
+func (dl *DancingLink) Solve() bool {
+	dl.solve(nil)
+	return dl.head.right == dl.head
+}
+
+func (dl *DancingLink) GetAllResult() []string {
+	if dl.head.right == dl.head {
+		return []string{dl.String()}
+	} else {
+		var results []string
+		dl.solve(&results)
+		return results
 	}
+}
+
+func (dl *DancingLink) ContainsCol(col int) bool {
+	return dl.colSet.Contains(col)
+}
+
+func (dl *DancingLink) ContainsRow(row int) bool {
+	return dl.rowSet.Contains(row)
 }
 
 func (dl DancingLink) String() string {
@@ -81,8 +83,8 @@ func (dl DancingLink) String() string {
 
 func (dl *DancingLink) initDancingLinkRows() {
 	dl.head = newDancingLinkNode()
-	dl.colNodes = genColNodes(dl.head, 324)
-	dl.rowNodes = make([](*DancingLinkNode), 729)
+	dl.colNodes, dl.colSet = genColNodes(dl.head, 324)
+	dl.rowNodes, dl.rowSet = make([](*DancingLinkNode), 729), mapset.NewSet()
 	for i := 0; i < 81; i++ {
 		for digit := 1; digit < 10; digit++ {
 			index, subgrid := i*9+digit-1, i/9/3*3+i%9/3
@@ -93,12 +95,14 @@ func (dl *DancingLink) initDancingLinkRows() {
 				subgrid*9 + digit + 242,
 			}
 			dl.rowNodes[index] = genRowNodes(dl.colNodes, index, cols)
+			dl.rowSet.Add(i*9 + digit - 1)
 		}
 	}
 }
 
-func genColNodes(head *DancingLinkNode, nCols int) [](*DancingLinkNode) {
+func genColNodes(head *DancingLinkNode, nCols int) ([](*DancingLinkNode), mapset.Set) {
 	colNodes := make([](*DancingLinkNode), nCols)
+	colSet := mapset.NewSet()
 	for i := 0; i < nCols; i++ {
 		node := newDancingLinkNode()
 		node.right = head
@@ -108,8 +112,9 @@ func genColNodes(head *DancingLinkNode, nCols int) [](*DancingLinkNode) {
 		node.col = i
 		node.row = -1
 		colNodes[i] = node
+		colSet.Add(i)
 	}
-	return colNodes
+	return colNodes, colSet
 }
 
 func genRowNodes(colNodes [](*DancingLinkNode), row int, cols []int) *DancingLinkNode {
@@ -138,9 +143,10 @@ func (dl *DancingLink) coverCol(col int) {
 	colNode := dl.colNodes[col]
 	colNode.left.right = colNode.right
 	colNode.right.left = colNode.left
+	dl.colSet.Remove(col)
 	for node1 := colNode.down; node1 != colNode; node1 = node1.down {
-		// dl.coverRow(node1.row)
 		rowNode := dl.rowNodes[node1.row]
+		dl.rowSet.Remove(node1.row)
 		for node2 := rowNode.right; node2 != rowNode; node2 = node2.right {
 			if node2 != node1 {
 				node2.up.down = node2.down
@@ -155,8 +161,10 @@ func (dl *DancingLink) uncoverCol(col int) {
 	colNode := dl.colNodes[col]
 	colNode.left.right = colNode
 	colNode.right.left = colNode
+	dl.colSet.Add(col)
 	for node1 := colNode.up; node1 != colNode; node1 = node1.up {
 		rowNode := dl.rowNodes[node1.row]
+		dl.rowSet.Add(node1.row)
 		for node2 := rowNode.left; node2 != rowNode; node2 = node2.left {
 			if node2 != node1 {
 				node2.up.down = node2
@@ -167,12 +175,48 @@ func (dl *DancingLink) uncoverCol(col int) {
 	}
 }
 
+func (dl *DancingLink) coverRow(row int) {
+	rowNode := dl.rowNodes[row]
+	for node := rowNode.right; node != rowNode; node = node.right {
+		dl.coverCol(node.col)
+	}
+}
+
+func (dl *DancingLink) uncoverRow(row int) {
+	rowNode := dl.rowNodes[row]
+	for node := rowNode.left; node != rowNode; node = node.left {
+		dl.uncoverCol(node.col)
+	}
+}
+
 func (dl *DancingLink) addStep(row int) {
 	dl.board[row/9] = row%9 + 1
 }
 
 func (dl *DancingLink) removeStep(row int) {
 	dl.board[row/9] = 0
+}
+
+func (dl *DancingLink) solve(results *[]string) {
+	if dl.head.right != dl.head {
+		colNode := dl.head.right
+		for node := colNode.down; node != colNode; node = node.down {
+			dl.addStep(node.row)
+			dl.coverRow(node.row)
+
+			dl.solve(results)
+			if dl.head.right == dl.head {
+				if results != nil {
+					*results = append(*results, dl.String())
+				} else {
+					return
+				}
+			}
+
+			dl.uncoverRow(node.row)
+			dl.removeStep(node.row)
+		}
+	}
 }
 
 func newDancingLinkNode() *DancingLinkNode {
