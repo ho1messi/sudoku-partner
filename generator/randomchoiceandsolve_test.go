@@ -7,7 +7,7 @@ import (
 )
 
 func TestGenRandomSudoku(t *testing.T) {
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 1000; i++ {
 		sudoku := GenRandomSudoku()
 		if !isSudokuValid(sudoku) {
 			t.Errorf("\n%s", sudoku)
@@ -17,7 +17,7 @@ func TestGenRandomSudoku(t *testing.T) {
 
 func BenchmarkGenRandomSudokuWithNDigit(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		genRandomSudokuWithNDigit(15)
+		GenRandomSudokuWithNDigit(11, 0)
 	}
 }
 

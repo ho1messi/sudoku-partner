@@ -73,6 +73,10 @@ func (dl *DancingLink) ContainsRow(row int) bool {
 	return dl.rowSet.Contains(row)
 }
 
+func (dl *DancingLink) IsSolved() bool {
+	return dl.head.right == dl.head
+}
+
 func (dl DancingLink) String() string {
 	strs := []string{}
 	for _, digit := range dl.board {
@@ -199,7 +203,7 @@ func (dl *DancingLink) removeStep(row int) {
 
 func (dl *DancingLink) solve(results *[]string) {
 	if dl.head.right != dl.head {
-		colNode := dl.head.right
+		colNode := dl.selectCol()
 		for node := colNode.down; node != colNode; node = node.down {
 			dl.addStep(node.row)
 			dl.coverRow(node.row)
@@ -217,6 +221,16 @@ func (dl *DancingLink) solve(results *[]string) {
 			dl.removeStep(node.row)
 		}
 	}
+}
+
+func (dl *DancingLink) selectCol() *DancingLinkNode {
+	var colNode *DancingLinkNode
+	for node := dl.head.right; node != dl.head; node = node.right {
+		if colNode == nil || node.size < colNode.size {
+			colNode = node
+		}
+	}
+	return colNode
 }
 
 func newDancingLinkNode() *DancingLinkNode {
